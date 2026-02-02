@@ -1,0 +1,26 @@
+{
+  "common": {
+    "version": "Versión",
+    "invalid_configuration": "Configuración inválida",
+    "missing_entity": "Falta entidad requerida",
+    "unavailable": "No disponible"
+  },
+  "config": {
+    "humidity_sensor": "Sensor de Humedad (Requerido)",
+    "target_humidity": "Humedad Objetivo (Requerida)",
+    "mist_level": "Control de Nivel de Niebla (Requerido)",
+    "water_sensor": "Sensor de Agua (Requerido)",
+    "override_timer": "Temporizador de Anulación (Requerido)",
+    "name": "Nombre (Opcional)",
+    "mist_min": "Nivel Mínimo de Niebla (Opcional, predeterminado 1)",
+    "mist_max": "Nivel Máximo de Niebla (Opcional, predeterminado 100)"
+  },
+  "state": {
+    "low_water": "¡Agua Baja!",
+    "current_humidity": "Humedad Actual",
+    "target": "Objetivo",
+    "mist_level": "Nivel de Niebla",
+    "override_off": "Automático",
+    "override_on": "Anulación Activa"
+  }
+}

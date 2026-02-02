@@ -1,0 +1,26 @@
+{
+  "common": {
+    "version": "Version",
+    "invalid_configuration": "Invalid configuration",
+    "missing_entity": "Missing required entity",
+    "unavailable": "Unavailable"
+  },
+  "config": {
+    "humidity_sensor": "Humidity Sensor (Required)",
+    "target_humidity": "Target Humidity (Required)",
+    "mist_level": "Mist Level Control (Required)",
+    "water_sensor": "Water Sensor (Required)",
+    "override_timer": "Override Timer (Required)",
+    "name": "Name (Optional)",
+    "mist_min": "Min Mist Level (Optional, default 1)",
+    "mist_max": "Max Mist Level (Optional, default 100)"
+  },
+  "state": {
+    "low_water": "Low Water!",
+    "current_humidity": "Current Humidity",
+    "target": "Target",
+    "mist_level": "Mist Level",
+    "override_off": "Automatic",
+    "override_on": "Override Active"
+  }
+}
