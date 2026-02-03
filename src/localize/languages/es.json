@@ -6,20 +6,35 @@
     "unavailable": "No disponible"
   },
   "config": {
-    "humidity_sensor": "Sensor de Humedad (Requerido)",
-    "target_humidity": "Humedad Objetivo (Requerida)",
-    "mist_level": "Control de Nivel de Niebla (Requerido)",
-    "water_sensor": "Sensor de Agua (Requerido)",
-    "override_timer": "Entidad del Temporizador (Requerido)",
-    "override_timer_options": "Opciones del Temporizador (Requerido)",
-    "name": "Nombre (Opcional)"
+    "entity": "Entidad del Humidificador",
+    "entity_helper": "Requerida",
+    "name": "Nombre",
+    "name_helper": "Opcional",
+    "icon": "Icono",
+    "icon_helper": "Opcional",
+    "humidity_sensor": "Sensor de Humedad",
+    "humidity_sensor_helper": "Opcional",
+    "target_humidity": "Humedad Objetivo",
+    "target_humidity_helper": "Opcional",
+    "fan_speed": "Velocidad del Ventilador",
+    "fan_speed_helper": "Opcional",
+    "water_sensor": "Sensor de Agua",
+    "water_sensor_helper": "Opcional",
+    "override_timer": "Entidad del Temporizador",
+    "override_timer_helper": "Opcional",
+    "override_timer_options": "Opciones del Temporizador",
+    "override_timer_options_helper": "Opcional"
   },
   "state": {
     "low_water": "¡Agua Baja!",
     "current_humidity": "Humedad Actual",
     "target": "Objetivo",
-    "mist_level": "Nivel de Niebla",
+    "fan_speed": "Velocidad del Ventilador",
     "override": "Anulación",
     "automatic": "Automático"
+  },
+  "ui": {
+    "entity_not_found": "Entidad no encontrada: {0}",
+    "unable_to_resolve_entities": "No se pueden resolver las entidades requeridas"
   }
 }

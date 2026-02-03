@@ -7,8 +7,8 @@ const languages: any = {
   es: es,
 };
 
-export function localize(string: string, search = '', replace = ''): string {
-  const lang = (localStorage.getItem('selectedLanguage') || 'en').replace(/['"]+/g, '').replace('-', '_');
+export function localize(string: string, ...args: string[]): string {
+  const lang = (localStorage.getItem('selectedLanguage') || 'en').replace(/['"]+ /g, '').replace('-', '_');
 
   let translated: string;
 
@@ -20,8 +20,12 @@ export function localize(string: string, search = '', replace = ''): string {
 
   if (translated === undefined) translated = string.split('.').reduce((o, i) => o[i], languages['en']);
 
-  if (search !== '' && replace !== '') {
-    translated = translated.replace(search, replace);
+  // Replace {0}, {1}, etc. with provided arguments
+  if (args.length > 0) {
+    args.forEach((arg, index) => {
+      translated = translated.replace(`{${index}}`, arg);
+    });
   }
+
   return translated;
 }

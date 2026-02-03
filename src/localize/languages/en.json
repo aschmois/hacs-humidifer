@@ -6,20 +6,35 @@
     "unavailable": "Unavailable"
   },
   "config": {
-    "humidity_sensor": "Humidity Sensor (Required)",
-    "target_humidity": "Target Humidity (Required)",
-    "mist_level": "Mist Level Control (Required)",
-    "water_sensor": "Water Sensor (Required)",
-    "override_timer": "Override Timer Entity (Required)",
-    "override_timer_options": "Override Timer Options (Required)",
-    "name": "Name (Optional)"
+    "entity": "Humidifier Entity",
+    "entity_helper": "Required",
+    "name": "Name",
+    "name_helper": "Optional",
+    "icon": "Icon",
+    "icon_helper": "Optional",
+    "humidity_sensor": "Humidity Sensor",
+    "humidity_sensor_helper": "Optional",
+    "target_humidity": "Target Humidity",
+    "target_humidity_helper": "Optional",
+    "fan_speed": "Fan Speed",
+    "fan_speed_helper": "Optional",
+    "water_sensor": "Water Sensor",
+    "water_sensor_helper": "Optional",
+    "override_timer": "Override Timer Entity",
+    "override_timer_helper": "Optional",
+    "override_timer_options": "Override Timer Options",
+    "override_timer_options_helper": "Optional"
   },
   "state": {
     "low_water": "Low Water!",
     "current_humidity": "Current Humidity",
     "target": "Target",
-    "mist_level": "Mist Level",
+    "fan_speed": "Fan Speed",
     "override": "Override",
     "automatic": "Automatic"
+  },
+  "ui": {
+    "entity_not_found": "Entity not found: {0}",
+    "unable_to_resolve_entities": "Unable to resolve required entities"
   }
 }

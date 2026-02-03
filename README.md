@@ -1,19 +1,22 @@
 # Humidifier Control Card
 
-A custom Home Assistant Lovelace card for controlling humidifiers with override timer and automatic mist adjustment.
+A custom Home Assistant Lovelace card for controlling humidifiers with optional override timer and automatic fan speed adjustment.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
 ## Features
 
+- **Smart Entity Discovery**: Automatically finds related entities from your humidifier device
+- **Clickable Elements**: Click on humidifier name to view device details, click humidity to view sensor details
 - **Current Humidity Display**: Large, easy-to-read display of current humidity with unavailable state indicator
-- **Target Humidity Control**: Slider to adjust target humidity level
-- **Mist Level Visualization**: Visual representation using 5 droplet icons showing current mist intensity
-- **Override Timer**: Dropdown selector for manual override duration
+- **Target Humidity Control**: Optional slider to adjust target humidity level
+- **Fan Speed Visualization**: Visual representation using 5 droplet icons showing current fan speed intensity
+- **Override Timer**: Optional dropdown selector for manual override duration
 - **Automatic/Manual Modes**:
-  - Automatic mode: Mist level is read-only and controlled by automation
-  - Override mode: Mist level becomes adjustable manually
-- **Low Water Alert**: Visual warning banner when water level is low
+  - Automatic mode: Fan speed is read-only and controlled by automation (when override timer is idle)
+  - Manual mode: Fan speed becomes adjustable manually (when override timer is active or timer not configured)
+- **Low Water Alert**: Optional visual warning icon when water level is low
+- **Flexible Configuration**: All entities except the main humidifier are optional with smart defaults
 - **Bilingual Support**: English and Spanish localization
 
 ## Installation
@@ -44,87 +47,135 @@ resources:
 
 ## Configuration
 
-### Basic Configuration
+### Minimal Configuration
 
-Add the card to your Lovelace dashboard with the following configuration:
+The card only requires a humidifier entity. All other entities are optional and will be auto-detected or the card will adapt:
 
 ```yaml
 type: custom:humidifier-control-card
-humidity_sensor: sensor.master_thermometer_humidity
-target_humidity: input_number.upstairs_humidity
-mist_level: number.upstairs_humidifier_mist_level
-water_sensor: binary_sensor.upstairs_humidifier_low_water
-override_timer: timer.upstairs_humidifier_override
-override_timer_options: input_select.upstairs_humidifier_timer_options
+entity: humidifier.bedroom
+```
+
+### Basic Configuration with Manual Control
+
+For full automatic/manual mode support, specify target humidity and override timer entities:
+
+```yaml
+type: custom:humidifier-control-card
+entity: humidifier.bedroom
+target_humidity: input_number.bedroom_humidity_target
+override_timer: timer.bedroom_humidifier_override
+override_timer_options: input_select.bedroom_timer_options
 ```
 
 ### Full Configuration
 
 ```yaml
 type: custom:humidifier-control-card
+entity: humidifier.bedroom
 name: Master Bedroom Humidifier
-humidity_sensor: sensor.master_thermometer_humidity
-target_humidity: input_number.upstairs_humidity
-mist_level: number.upstairs_humidifier_mist_level
-water_sensor: binary_sensor.upstairs_humidifier_low_water
-override_timer: timer.upstairs_humidifier_override
-override_timer_options: input_select.upstairs_humidifier_timer_options
+icon: mdi:air-humidifier-variant
+humidity_sensor: sensor.bedroom_humidity
+target_humidity: input_number.bedroom_humidity_target
+fan_speed: number.bedroom_humidifier_fan_speed
+water_sensor: binary_sensor.bedroom_humidifier_water_level
+override_timer: timer.bedroom_humidifier_override
+override_timer_options: input_select.bedroom_timer_options
 ```
 
 ### Configuration Options
 
-| Name                      | Type   | Required | Default      | Description                                          |
-| ------------------------- | ------ | -------- | ------------ | ---------------------------------------------------- |
-| `type`                    | string | Yes      | -            | Must be `custom:humidifier-control-card`             |
-| `humidity_sensor`         | string | Yes      | -            | Entity ID of the humidity sensor                     |
-| `target_humidity`         | string | Yes      | -            | Entity ID of the target humidity input_number        |
-| `mist_level`              | string | Yes      | -            | Entity ID of the mist level number entity            |
-| `water_sensor`            | string | Yes      | -            | Entity ID of the low water binary_sensor             |
-| `override_timer`          | string | Yes      | -            | Entity ID of the override timer (timer domain)       |
-| `override_timer_options`  | string | Yes      | -            | Entity ID of the timer options (input_select domain) |
-| `name`                    | string | No       | `Humidifier` | Name displayed in the card header                    |
+| Name                      | Type   | Required | Default                          | Description                                                           |
+| ------------------------- | ------ | -------- | -------------------------------- | --------------------------------------------------------------------- |
+| `type`                    | string | Yes      | -                                | Must be `custom:humidifier-control-card`                              |
+| `entity`                  | string | Yes      | -                                | Entity ID of the humidifier device                                    |
+| `name`                    | string | No       | Auto from entity                 | Name displayed in the card header                                     |
+| `icon`                    | string | No       | `mdi:air-humidifier`             | Icon displayed in the card header                                     |
+| `humidity_sensor`         | string | No       | Auto-detected                    | Entity ID of the humidity sensor (uses humidifier's attribute first)  |
+| `target_humidity`         | string | No       | Auto-detected                    | Entity ID of the target humidity input_number                         |
+| `fan_speed`               | string | No       | Auto-detected                    | Entity ID of the fan speed control (number or fan entity)             |
+| `water_sensor`            | string | No       | Auto-detected                    | Entity ID of the low water binary_sensor                              |
+| `override_timer`          | string | No       | Auto-detected                    | Entity ID of the override timer (timer domain)                        |
+| `override_timer_options`  | string | No       | Auto-detected                    | Entity ID of the timer options (input_select domain)                  |
 
-### Required Entities
+**Note:** Target humidity, override timer, and override timer options work as a group. If any are missing, the card operates in permanent manual mode.
 
-You need to set up the following entities in your Home Assistant configuration:
+### Entity Auto-Detection
 
-1. **Humidity Sensor** (`sensor.*`): Current humidity reading
-2. **Target Humidity** (`input_number.*`): Desired humidity level with +/- buttons
-3. **Mist Level** (`number.*`): Humidifier mist intensity control
-4. **Water Sensor** (`binary_sensor.*`): Low water indicator
-5. **Override Timer** (`timer.*`): Actual timer entity that tracks override state
-6. **Override Timer Options** (`input_select.*`): Timer duration selector with options like:
-   - `Off`
-   - `1 minute`
-   - `5 minutes`
-   - `30 minutes`
-   - `1 hour`
-   - `24 hours`
-   - `Forever`
+The card attempts to automatically find related entities based on your humidifier device name. For best results:
+
+1. **Humidity Sensor**: The card first checks the humidifier's `current_humidity` attribute. If not available, it searches for sensor entities with matching names containing "humidity"
+2. **Target Humidity**: Searches for `input_number` entities with matching names containing "target"
+3. **Fan Speed**: First checks for `fan` entities with matching names, then `number` entities containing "mist" or "level"
+4. **Water Sensor**: Searches for `binary_sensor` entities with matching names containing "water"
+5. **Override Timer**: Searches for `timer` entities with matching names containing "override"
+6. **Override Timer Options**: Searches for `input_select` entities with matching names containing "override"
+
+### Example Helper Entities
+
+If auto-detection doesn't work or you prefer explicit control, create these helper entities:
+
+#### Target Humidity (input_number)
+```yaml
+input_number:
+  bedroom_humidity_target:
+    name: Bedroom Humidity Target
+    min: 30
+    max: 70
+    step: 1
+    unit_of_measurement: "%"
+    icon: mdi:water-percent
+```
+
+#### Override Timer Options (input_select)
+```yaml
+input_select:
+  bedroom_timer_options:
+    name: Bedroom Timer Options
+    options:
+      - "Off"
+      - "1 minute"
+      - "5 minutes"
+      - "30 minutes"
+      - "1 hour"
+      - "24 hours"
+      - "Forever"
+    icon: mdi:timer
+```
+
+#### Override Timer (timer)
+```yaml
+timer:
+  bedroom_humidifier_override:
+    name: Bedroom Humidifier Override
+    icon: mdi:timer-outline
+```
 
 ## How It Works
 
+### Manual Mode (Default)
+
+When override timer entities are not configured or when the timer is active:
+
+- Current humidity (clickable to view sensor details)
+- Humidifier name/icon (clickable to view device details)
+- Target humidity (adjustable with +/- buttons, if configured)
+- Fan speed control (+/- buttons to manually adjust)
+- Override timer dropdown (if configured, to select override duration)
+
+In this mode, you have full manual control of the fan speed.
+
 ### Automatic Mode
 
-When the override timer is in `idle` state (set to "Off"), the card displays:
+When override timer entities are configured and the timer is in `idle` state ("Off"):
 
-- Current humidity (read-only)
+- Current humidity (clickable to view sensor details)
+- Humidifier name/icon (clickable to view device details)
 - Target humidity (adjustable with +/- buttons)
-- Mist level visualization (read-only icons showing current intensity)
+- Fan speed visualization (read-only icons showing current intensity)
 - Override timer dropdown (to enable manual control)
 
-In this mode, your Home Assistant automations control the mist level based on the current and target humidity.
-
-### Manual Override Mode
-
-When the override timer is active (any value other than "Off"):
-
-- Current humidity (read-only)
-- Target humidity (adjustable with +/- buttons)
-- Mist level control (+/- buttons to manually adjust)
-- Override timer dropdown (shows current override duration)
-
-The card allows manual control of the mist level until the timer expires or is set back to "Off".
+In this mode, your Home Assistant automations control the fan speed based on the current and target humidity. Select a timer duration to switch to manual mode.
 
 ## Development
 

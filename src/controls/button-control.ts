@@ -12,8 +12,6 @@ export class ButtonControl extends LitElement {
   @property({ type: Number }) public step: number = 1;
   @property({ type: String }) public unit: string = '';
 
-  private _holdTimer?: number;
-
   private onIncrement(e: MouseEvent): void {
     e.preventDefault();
     e.stopPropagation();
@@ -32,20 +30,9 @@ export class ButtonControl extends LitElement {
     });
   }
 
-  private _handleValueHoldStart(): void {
-    this._holdTimer = window.setTimeout(() => {
-      this._openMoreInfo();
-    }, 500);
-  }
-
-  private _handleValueHoldEnd(): void {
-    if (this._holdTimer) {
-      clearTimeout(this._holdTimer);
-      this._holdTimer = undefined;
-    }
-  }
-
-  private _openMoreInfo(): void {
+  private _handleValueClick(e: MouseEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
     fireEvent(this, 'hass-more-info', { entityId: this.entity });
   }
 
@@ -62,12 +49,7 @@ export class ButtonControl extends LitElement {
         </button>
         <div
           class="value"
-          @touchstart=${this._handleValueHoldStart}
-          @touchend=${this._handleValueHoldEnd}
-          @touchcancel=${this._handleValueHoldEnd}
-          @mousedown=${this._handleValueHoldStart}
-          @mouseup=${this._handleValueHoldEnd}
-          @mouseleave=${this._handleValueHoldEnd}
+          @click=${this._handleValueClick}
         >
           ${this.value}${this.unit}
         </div>

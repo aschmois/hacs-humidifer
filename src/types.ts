@@ -9,11 +9,13 @@ declare global {
 
 export interface HumidifierControlCardConfig extends LovelaceCardConfig {
   type: string;
+  entity: string; // Main humidifier entity
   name?: string;
-  humidity_sensor: string;
-  target_humidity: string;
-  mist_level: string;
-  water_sensor: string;
-  override_timer: string;
-  override_timer_options: string;
+  icon?: string;
+  humidity_sensor?: string;
+  target_humidity?: string;
+  fan_speed?: string;
+  water_sensor?: string;
+  override_timer?: string;
+  override_timer_options?: string;
 }

@@ -1,6 +1,6 @@
 import { LitElement, html, TemplateResult, css, PropertyValues, CSSResultGroup } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { HomeAssistant, hasConfigOrEntityChanged, LovelaceCardEditor } from 'custom-card-helpers';
+import { HomeAssistant, hasConfigOrEntityChanged, LovelaceCardEditor, fireEvent } from 'custom-card-helpers';
 
 import type { HumidifierControlCardConfig } from './types';
 import { localize } from './localize/localize';
@@ -16,13 +16,10 @@ export class HumidifierControlCard extends LitElement {
 
   public static getStubConfig(hass: HomeAssistant): Record<string, unknown> {
     const entities = Object.keys(hass.states);
+    const humidifierEntity = entities.find((e) => e.startsWith('humidifier.'));
     return {
       type: 'custom:humidifier-control-card',
-      humidity_sensor: entities.find((e) => e.startsWith('sensor.') && e.includes('humidity')),
-      target_humidity: entities.find((e) => e.startsWith('input_number.')),
-      mist_level: entities.find((e) => e.startsWith('number.')),
-      water_sensor: entities.find((e) => e.startsWith('binary_sensor.') && e.includes('water')),
-      override_timer: entities.find((e) => e.startsWith('input_select.')),
+      entity: humidifierEntity || '',
     };
   }
 
@@ -35,41 +32,11 @@ export class HumidifierControlCard extends LitElement {
       throw new Error(localize('common.invalid_configuration'));
     }
 
-    if (!config.humidity_sensor) {
-      throw new Error(localize('common.missing_entity') + ': humidity_sensor');
-    }
-    if (!config.target_humidity) {
-      throw new Error(localize('common.missing_entity') + ': target_humidity');
-    }
-    if (!config.mist_level) {
-      throw new Error(localize('common.missing_entity') + ': mist_level');
-    }
-    if (!config.water_sensor) {
-      throw new Error(localize('common.missing_entity') + ': water_sensor');
-    }
-    if (!config.override_timer) {
-      throw new Error(localize('common.missing_entity') + ': override_timer');
-    }
-    if (!config.override_timer_options) {
-      throw new Error(localize('common.missing_entity') + ': override_timer_options');
+    if (!config.entity) {
+      throw new Error(localize('common.missing_entity') + ': entity');
     }
 
-    // Get default name from mist_level entity's friendly name (remove entity-specific suffix)
-    let defaultName = 'Humidifier';
-    if (!config.name && this.hass && config.mist_level) {
-      const mistEntity = this.hass.states[config.mist_level];
-      if (mistEntity?.attributes?.friendly_name) {
-        // Remove common suffixes like "Mist Level", "Level", etc.
-        defaultName = mistEntity.attributes.friendly_name
-          .replace(/\s+(Mist\s+)?Level$/i, '')
-          .trim();
-      }
-    }
-
-    this.config = {
-      name: defaultName,
-      ...config,
-    };
+    this.config = config;
   }
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
@@ -84,25 +51,171 @@ export class HumidifierControlCard extends LitElement {
     return 2;
   }
 
+  private _resolveEntities(mainEntity: any): {
+    humidityState: any;
+    targetState: any | null;
+    mistState: any;
+    waterState: any | null;
+    overrideTimerState: any | null;
+    overrideOptionsState: any | null;
+    name: string;
+    icon: string;
+  } | null {
+    const entityId = this.config.entity;
+    const baseName = entityId.split('.')[1];
+
+    // Resolve name
+    const name = this.config.name || mainEntity.attributes?.friendly_name || 'Humidifier';
+
+    // Resolve icon
+    const icon = this.config.icon || 'mdi:air-humidifier';
+
+    // Resolve humidity sensor
+    let humidityState: any = null;
+    if (this.config.humidity_sensor) {
+      humidityState = this.hass.states[this.config.humidity_sensor];
+    } else {
+      // Use humidifier's current_humidity attribute
+      const currentHumidity = mainEntity.attributes?.current_humidity;
+      if (currentHumidity !== undefined) {
+        // Create a virtual state for the humidity reading
+        humidityState = {
+          state: currentHumidity.toString(),
+          entity_id: entityId,
+          attributes: {},
+        };
+      } else {
+        // Try to find a humidity sensor with similar name
+        humidityState = this._findEntity('sensor', baseName, 'humidity');
+      }
+    }
+
+    // Resolve target humidity
+    let targetState: any = null;
+    if (this.config.target_humidity) {
+      targetState = this.hass.states[this.config.target_humidity];
+    }
+
+    // Resolve fan speed
+    let mistState: any = null;
+    if (this.config.fan_speed) {
+      mistState = this.hass.states[this.config.fan_speed];
+    } else {
+      // Check if humidifier has a fan entity
+      const fanEntity = this._findEntity('fan', baseName);
+      if (fanEntity) {
+        mistState = fanEntity;
+      } else {
+        // Try to find a number entity for fan speed (also search for mist/level)
+        mistState = this._findEntity('number', baseName, 'mist|level');
+      }
+    }
+
+    // Resolve water sensor
+    let waterState: any = null;
+    if (this.config.water_sensor) {
+      waterState = this.hass.states[this.config.water_sensor];
+    } else {
+      waterState = this._findEntity('binary_sensor', baseName, 'water');
+    }
+
+    // Resolve override timer
+    let overrideTimerState: any = null;
+    if (this.config.override_timer) {
+      overrideTimerState = this.hass.states[this.config.override_timer];
+    }
+
+    // Resolve override timer options
+    let overrideOptionsState: any = null;
+    if (this.config.override_timer_options) {
+      overrideOptionsState = this.hass.states[this.config.override_timer_options];
+    }
+
+    // If target state or override time or override options is not provided, force manual mode by clearing override states
+    if (!targetState || !overrideTimerState || !overrideOptionsState) {
+      overrideTimerState = null;
+      overrideOptionsState = null;
+    }
+
+    // Check if all required entities are found
+    if (!humidityState || !mistState) {
+      return null;
+    }
+
+    return {
+      humidityState,
+      targetState,
+      mistState,
+      waterState,
+      overrideTimerState,
+      overrideOptionsState,
+      name,
+      icon,
+    };
+  }
+
+  private _findEntity(domain: string, baseName: string, keywords?: string): any {
+    const entities = Object.keys(this.hass.states).filter((e) => e.startsWith(domain + '.'));
+
+    // Try to find entity with matching base name
+    let found = entities.find((e) => e.includes(baseName));
+
+    // If keywords provided, further filter by keywords
+    if (found && keywords) {
+      const keywordArray = keywords.split('|');
+      const withKeywords = entities.filter((e) => {
+        const lower = e.toLowerCase();
+        return lower.includes(baseName) && keywordArray.some((kw) => lower.includes(kw.toLowerCase()));
+      });
+      if (withKeywords.length > 0) {
+        found = withKeywords[0];
+      }
+    }
+
+    // If still not found but keywords provided, try just keywords
+    if (!found && keywords) {
+      const keywordArray = keywords.split('|');
+      found = entities.find((e) => {
+        const lower = e.toLowerCase();
+        return keywordArray.some((kw) => lower.includes(kw.toLowerCase()));
+      });
+    }
+
+    return found ? this.hass.states[found] : null;
+  }
+
+  private _openMoreInfo(entityId: string): void {
+    fireEvent(this, 'hass-more-info', { entityId });
+  }
+
   protected render(): TemplateResult | void {
     if (!this.hass || !this.config) {
       return html``;
     }
 
-    const humidityState = this.hass.states[this.config.humidity_sensor];
-    const targetState = this.hass.states[this.config.target_humidity];
-    const mistState = this.hass.states[this.config.mist_level];
-    const waterState = this.hass.states[this.config.water_sensor];
-    const overrideTimerState = this.hass.states[this.config.override_timer];
-    const overrideOptionsState = this.hass.states[this.config.override_timer_options];
-
-    if (!humidityState || !targetState || !mistState || !waterState || !overrideTimerState || !overrideOptionsState) {
-      return html` <ha-card> <div class="card-content">Missing entity configuration</div> </ha-card> `;
+    const mainEntity = this.hass.states[this.config.entity];
+    if (!mainEntity) {
+      return html` <ha-card> <div class="card-content">${localize(
+        'ui.entity_not_found',
+        this.config.entity,
+      )}</div> </ha-card> `;
     }
 
+    // Discover or use configured entities
+    const resolvedConfig = this._resolveEntities(mainEntity);
+    if (!resolvedConfig) {
+      return html` <ha-card> <div class="card-content">${localize('ui.unable_to_resolve_entities')}</div> </ha-card> `;
+    }
+
+    const { humidityState, targetState, mistState, waterState, overrideTimerState, overrideOptionsState, name, icon } =
+      resolvedConfig;
+
     const isUnavailable = humidityState.state === 'unavailable' || humidityState.state === 'unknown';
-    const isWaterLow = waterState.state === 'on';
-    const isTimerActive = overrideTimerState.state !== 'idle';
+    const isWaterLow = waterState ? waterState.state === 'on' : false;
+    // Force manual mode if target, timer, or options are missing
+    const isTimerActive = (targetState && overrideTimerState && overrideOptionsState)
+      ? overrideTimerState.state !== 'idle'
+      : true;
 
     const mistMin = mistState.attributes?.min ?? 1;
     const mistMax = mistState.attributes?.max ?? 100;
@@ -113,14 +226,12 @@ export class HumidifierControlCard extends LitElement {
         <div class="card-content">
           <!-- Header with current humidity -->
           <div class="header-row">
-            <div class="title-row">
-              <ha-icon icon="mdi:air-humidifier"></ha-icon>
-              <span class="title">${this.config.name}</span>
+            <div class="title-row" @click=${() => this._openMoreInfo(this.config.entity)}>
+              <ha-icon icon="${icon}"></ha-icon>
+              <span class="title">${name}</span>
             </div>
-            ${isWaterLow
-              ? html` <ha-icon class="water-alert-icon" icon="mdi:water-alert"></ha-icon> `
-              : ''}
-            <div class="humidity-display">
+            ${isWaterLow ? html` <ha-icon class="water-alert-icon" icon="mdi:water-alert"></ha-icon> ` : ''}
+            <div class="humidity-display" @click=${() => this._openMoreInfo(humidityState.entity_id)}>
               <span class="humidity-value ${isUnavailable ? 'unavailable' : ''}"
                 >${humidityState.state}${isUnavailable ? '' : '%'}</span
               >
@@ -128,11 +239,12 @@ export class HumidifierControlCard extends LitElement {
           </div>
 
           <!-- Target Humidity -->
+          ${targetState ? html`
           <div class="control-row">
             <span class="control-label">${localize('state.target')}</span>
             <humidifier-button-control
               .hass=${this.hass}
-              .entity=${this.config.target_humidity}
+              .entity=${targetState.entity_id}
               .value=${parseFloat(targetState.state)}
               .min=${targetState.attributes?.min ?? 0}
               .max=${targetState.attributes?.max ?? 100}
@@ -140,26 +252,30 @@ export class HumidifierControlCard extends LitElement {
               .unit=${'%'}
             ></humidifier-button-control>
           </div>
+          ` : ''}
 
           <!-- Override Timer -->
+          ${overrideOptionsState ? html`
           <div class="control-row">
             <span class="control-label">${localize('state.override')}</span>
             <humidifier-timer-select-control
               .hass=${this.hass}
-              .entity=${this.config.override_timer_options}
+              .entity=${overrideOptionsState.entity_id}
               .value=${overrideOptionsState.state}
               .options=${overrideOptionsState.attributes?.options ?? []}
             ></humidifier-timer-select-control>
           </div>
+          ` : ''}
 
-          <!-- Mist Level -->
+          <!-- Fan Speed -->
           <div class="control-row mist-row">
-            <span class="control-label">${localize('state.mist_level')}</span>
-            ${isTimerActive
-              ? html`
+            <span class="control-label">${localize('state.fan_speed')}</span>
+            ${
+              isTimerActive
+                ? html`
                   <humidifier-button-control
                     .hass=${this.hass}
-                    .entity=${this.config.mist_level}
+                    .entity=${mistState.entity_id}
                     .value=${mistCurrent}
                     .min=${mistMin}
                     .max=${mistMax}
@@ -167,7 +283,8 @@ export class HumidifierControlCard extends LitElement {
                     .unit=${''}
                   ></humidifier-button-control>
                 `
-              : html`<div class="mist-display">${this._renderMistIcons(mistCurrent, mistMin, mistMax)}</div>`}
+                : html`<div class="mist-display">${this._renderMistIcons(mistCurrent, mistMin, mistMax)}</div>`
+            }
           </div>
         </div>
       </ha-card>
@@ -183,7 +300,7 @@ export class HumidifierControlCard extends LitElement {
         html` <ha-icon
           class="mist-icon ${i < fillCount ? 'active' : ''}"
           icon=${i < fillCount ? 'mdi:water' : 'mdi:water-outline'}
-        ></ha-icon> `
+        ></ha-icon> `,
       );
     }
 
@@ -224,6 +341,7 @@ export class HumidifierControlCard extends LitElement {
         align-items: center;
         gap: 8px;
         flex: 1;
+        cursor: pointer;
       }
 
       .title-row ha-icon {
@@ -240,6 +358,7 @@ export class HumidifierControlCard extends LitElement {
       .humidity-display {
         display: flex;
         align-items: center;
+        cursor: pointer;
       }
 
       .humidity-value {
@@ -261,7 +380,8 @@ export class HumidifierControlCard extends LitElement {
       }
 
       @keyframes pulse {
-        0%, 100% {
+        0%,
+        100% {
           opacity: 1;
         }
         50% {

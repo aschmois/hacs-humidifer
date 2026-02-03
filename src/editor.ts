@@ -44,6 +44,14 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
     return this._config?.name || '';
   }
 
+  get _entity(): string {
+    return this._config?.entity || '';
+  }
+
+  get _icon(): string {
+    return this._config?.icon || '';
+  }
+
   get _humidity_sensor(): string {
     return this._config?.humidity_sensor || '';
   }
@@ -52,8 +60,8 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
     return this._config?.target_humidity || '';
   }
 
-  get _mist_level(): string {
-    return this._config?.mist_level || '';
+  get _fan_speed(): string {
+    return this._config?.fan_speed || '';
   }
 
   get _water_sensor(): string {
@@ -75,7 +83,35 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
 
     return html`
       <ha-entity-picker
+        label=${localize('config.entity')}
+        helper=${localize('config.entity_helper')}
+        .hass=${this.hass}
+        .value=${this._entity}
+        .configValue=${'entity'}
+        .includeDomains=${['humidifier']}
+        @value-changed=${this._valueChanged}
+        allow-custom-entity
+      ></ha-entity-picker>
+
+      <ha-textfield
+        label=${localize('config.name')}
+        helper=${localize('config.name_helper')}
+        .value=${this._name}
+        .configValue=${'name'}
+        @input=${this._valueChanged}
+      ></ha-textfield>
+
+      <ha-textfield
+        label=${localize('config.icon')}
+        helper=${localize('config.icon_helper')}
+        .value=${this._icon}
+        .configValue=${'icon'}
+        @input=${this._valueChanged}
+      ></ha-textfield>
+
+      <ha-entity-picker
         label=${localize('config.humidity_sensor')}
+        helper=${localize('config.humidity_sensor_helper')}
         .hass=${this.hass}
         .value=${this._humidity_sensor}
         .configValue=${'humidity_sensor'}
@@ -86,6 +122,7 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
 
       <ha-entity-picker
         label=${localize('config.target_humidity')}
+        helper=${localize('config.target_humidity_helper')}
         .hass=${this.hass}
         .value=${this._target_humidity}
         .configValue=${'target_humidity'}
@@ -95,17 +132,19 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
       ></ha-entity-picker>
 
       <ha-entity-picker
-        label=${localize('config.mist_level')}
+        label=${localize('config.fan_speed')}
+        helper=${localize('config.fan_speed_helper')}
         .hass=${this.hass}
-        .value=${this._mist_level}
-        .configValue=${'mist_level'}
-        .includeDomains=${['number']}
+        .value=${this._fan_speed}
+        .configValue=${'fan_speed'}
+        .includeDomains=${['number', 'fan']}
         @value-changed=${this._valueChanged}
         allow-custom-entity
       ></ha-entity-picker>
 
       <ha-entity-picker
         label=${localize('config.water_sensor')}
+        helper=${localize('config.water_sensor_helper')}
         .hass=${this.hass}
         .value=${this._water_sensor}
         .configValue=${'water_sensor'}
@@ -114,8 +153,10 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
         allow-custom-entity
       ></ha-entity-picker>
 
+      ${this._target_humidity ? html`
       <ha-entity-picker
         label=${localize('config.override_timer')}
+        helper=${localize('config.override_timer_helper')}
         .hass=${this.hass}
         .value=${this._override_timer}
         .configValue=${'override_timer'}
@@ -126,6 +167,7 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
 
       <ha-entity-picker
         label=${localize('config.override_timer_options')}
+        helper=${localize('config.override_timer_options_helper')}
         .hass=${this.hass}
         .value=${this._override_timer_options}
         .configValue=${'override_timer_options'}
@@ -133,13 +175,7 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
         @value-changed=${this._valueChanged}
         allow-custom-entity
       ></ha-entity-picker>
-
-      <ha-textfield
-        label=${localize('config.name')}
-        .value=${this._name}
-        .configValue=${'name'}
-        @input=${this._valueChanged}
-      ></ha-textfield>
+      ` : ''}
     `;
   }
 
