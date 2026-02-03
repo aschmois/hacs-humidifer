@@ -1,30 +1,29 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - '*'
 
 jobs:
   release:
     name: Prepare release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      # Build
       - name: Build the file
         run: |
-          cd /home/runner/work/humidifier-control-card/humidifier-control-card
           npm install
           npm run build
 
-      # Upload build file to the release as an asset.
-      - name: Upload zip to release
-        uses: svenstaro/upload-release-action@v1-release
-
+      - name: Upload build file to release
+        uses: svenstaro/upload-release-action@7f93926b6eec9cfdde9a8dfac51a4e23370b7c8e # v2.11.3
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: /home/runner/work/humidifier-control-card/humidifier-control-card/dist/humidifier-control-card.js
-          asset_name: humidifier-control-card.js
+          file: dist/hacs-humidifier.js
+          asset_name: hacs-humidifier.js
           tag: ${{ github.ref }}
           overwrite: true
