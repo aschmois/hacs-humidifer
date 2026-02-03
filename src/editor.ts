@@ -64,12 +64,8 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
     return this._config?.override_timer || '';
   }
 
-  get _mist_min(): number | undefined {
-    return this._config?.mist_min;
-  }
-
-  get _mist_max(): number | undefined {
-    return this._config?.mist_max;
+  get _override_timer_options(): string {
+    return this._config?.override_timer_options || '';
   }
 
   protected render(): TemplateResult | void {
@@ -123,6 +119,16 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
         .hass=${this.hass}
         .value=${this._override_timer}
         .configValue=${'override_timer'}
+        .includeDomains=${['timer']}
+        @value-changed=${this._valueChanged}
+        allow-custom-entity
+      ></ha-entity-picker>
+
+      <ha-entity-picker
+        label=${localize('config.override_timer_options')}
+        .hass=${this.hass}
+        .value=${this._override_timer_options}
+        .configValue=${'override_timer_options'}
         .includeDomains=${['input_select']}
         @value-changed=${this._valueChanged}
         allow-custom-entity
@@ -132,22 +138,6 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
         label=${localize('config.name')}
         .value=${this._name}
         .configValue=${'name'}
-        @input=${this._valueChanged}
-      ></ha-textfield>
-
-      <ha-textfield
-        type="number"
-        label=${localize('config.mist_min')}
-        .value=${this._mist_min ?? ''}
-        .configValue=${'mist_min'}
-        @input=${this._valueChanged}
-      ></ha-textfield>
-
-      <ha-textfield
-        type="number"
-        label=${localize('config.mist_max')}
-        .value=${this._mist_max ?? ''}
-        .configValue=${'mist_max'}
         @input=${this._valueChanged}
       ></ha-textfield>
     `;
@@ -186,10 +176,6 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
       delete tmpConfig[configValue];
       this._config = tmpConfig;
     } else {
-      // Parse numeric values for mist_min and mist_max
-      if (configValue === 'mist_min' || configValue === 'mist_max') {
-        value = value ? Number(value) : undefined;
-      }
       this._config = {
         ...this._config,
         [configValue]: value,

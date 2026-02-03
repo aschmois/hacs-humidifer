@@ -4,6 +4,8 @@ import { HomeAssistant, hasConfigOrEntityChanged, LovelaceCardEditor } from 'cus
 
 import type { HumidifierControlCardConfig } from './types';
 import { localize } from './localize/localize';
+import './controls/button-control';
+import './controls/timer-select-control';
 
 @customElement('humidifier-control-card')
 export class HumidifierControlCard extends LitElement {
@@ -48,9 +50,24 @@ export class HumidifierControlCard extends LitElement {
     if (!config.override_timer) {
       throw new Error(localize('common.missing_entity') + ': override_timer');
     }
+    if (!config.override_timer_options) {
+      throw new Error(localize('common.missing_entity') + ': override_timer_options');
+    }
+
+    // Get default name from mist_level entity's friendly name (remove entity-specific suffix)
+    let defaultName = 'Humidifier';
+    if (!config.name && this.hass && config.mist_level) {
+      const mistEntity = this.hass.states[config.mist_level];
+      if (mistEntity?.attributes?.friendly_name) {
+        // Remove common suffixes like "Mist Level", "Level", etc.
+        defaultName = mistEntity.attributes.friendly_name
+          .replace(/\s+(Mist\s+)?Level$/i, '')
+          .trim();
+      }
+    }
 
     this.config = {
-      name: 'Humidifier',
+      name: defaultName,
       ...config,
     };
   }
@@ -60,11 +77,11 @@ export class HumidifierControlCard extends LitElement {
       return false;
     }
 
-    return hasConfigOrEntityChanged(this, changedProps, false);
+    return hasConfigOrEntityChanged(this, changedProps, true);
   }
 
   public getCardSize(): number {
-    return 4;
+    return 2;
   }
 
   protected render(): TemplateResult | void {
@@ -76,96 +93,81 @@ export class HumidifierControlCard extends LitElement {
     const targetState = this.hass.states[this.config.target_humidity];
     const mistState = this.hass.states[this.config.mist_level];
     const waterState = this.hass.states[this.config.water_sensor];
-    const overrideState = this.hass.states[this.config.override_timer];
+    const overrideTimerState = this.hass.states[this.config.override_timer];
+    const overrideOptionsState = this.hass.states[this.config.override_timer_options];
 
-    if (!humidityState || !targetState || !mistState || !waterState || !overrideState) {
+    if (!humidityState || !targetState || !mistState || !waterState || !overrideTimerState || !overrideOptionsState) {
       return html` <ha-card> <div class="card-content">Missing entity configuration</div> </ha-card> `;
     }
 
     const isUnavailable = humidityState.state === 'unavailable' || humidityState.state === 'unknown';
     const isWaterLow = waterState.state === 'on';
-    const isOverrideActive = overrideState.state !== 'Off';
+    const isTimerActive = overrideTimerState.state !== 'idle';
 
-    const mistMin = mistState.attributes?.min ?? this.config.mist_min ?? 1;
-    const mistMax = mistState.attributes?.max ?? this.config.mist_max ?? 100;
+    const mistMin = mistState.attributes?.min ?? 1;
+    const mistMax = mistState.attributes?.max ?? 100;
     const mistCurrent = parseFloat(mistState.state);
 
     return html`
-      <ha-card .header=${this.config.name}>
+      <ha-card>
         <div class="card-content">
-          <!-- Current Humidity -->
-          <div class="humidity-section">
-            <div class="label">${localize('state.current_humidity')}</div>
-            <div class="humidity-value ${isUnavailable ? 'unavailable' : ''}">
-              ${humidityState.state}${isUnavailable ? '' : '%'}
+          <!-- Header with current humidity -->
+          <div class="header-row">
+            <div class="title-row">
+              <ha-icon icon="mdi:air-humidifier"></ha-icon>
+              <span class="title">${this.config.name}</span>
             </div>
-            ${isUnavailable ? html`<div class="unavailable-text">${localize('common.unavailable')}</div>` : ''}
+            ${isWaterLow
+              ? html` <ha-icon class="water-alert-icon" icon="mdi:water-alert"></ha-icon> `
+              : ''}
+            <div class="humidity-display">
+              <span class="humidity-value ${isUnavailable ? 'unavailable' : ''}"
+                >${humidityState.state}${isUnavailable ? '' : '%'}</span
+              >
+            </div>
           </div>
 
-          <!-- Low Water Warning -->
-          ${
-            isWaterLow
-              ? html`
-                <div class="water-warning">
-                  <ha-icon icon="mdi:water-alert"></ha-icon>
-                  <span>${localize('state.low_water')}</span>
-                </div>
-              `
-              : ''
-          }
-
           <!-- Target Humidity -->
-          <div class="control-section">
-            <div class="label">${localize('state.target')}</div>
-            <div class="slider-container">
-              <span class="slider-value">${targetState.state}%</span>
-              <input
-                type="range"
-                .min=${targetState.attributes?.min ?? 25}
-                .max=${targetState.attributes?.max ?? 60}
-                .step=${targetState.attributes?.step ?? 1}
-                .value=${targetState.state}
-                @change=${(e: Event) => this._setTargetHumidity((e.target as HTMLInputElement).value)}
-              />
-            </div>
+          <div class="control-row">
+            <span class="control-label">${localize('state.target')}</span>
+            <humidifier-button-control
+              .hass=${this.hass}
+              .entity=${this.config.target_humidity}
+              .value=${parseFloat(targetState.state)}
+              .min=${targetState.attributes?.min ?? 0}
+              .max=${targetState.attributes?.max ?? 100}
+              .step=${targetState.attributes?.step ?? 1}
+              .unit=${'%'}
+            ></humidifier-button-control>
           </div>
 
           <!-- Override Timer -->
-          <div class="control-section">
-            <div class="label">${localize('config.override_timer')}</div>
-            <select
-              .value=${overrideState.state}
-              @change=${(e: Event) => this._setOverrideTimer((e.target as HTMLSelectElement).value)}
-            >
-              ${overrideState.attributes?.options?.map(
-                (option: string) => html` <option value=${option} ?selected=${option === overrideState.state}>
-                  ${option}
-                </option>`,
-              )}
-            </select>
+          <div class="control-row">
+            <span class="control-label">${localize('state.override')}</span>
+            <humidifier-timer-select-control
+              .hass=${this.hass}
+              .entity=${this.config.override_timer_options}
+              .value=${overrideOptionsState.state}
+              .options=${overrideOptionsState.attributes?.options ?? []}
+            ></humidifier-timer-select-control>
           </div>
 
           <!-- Mist Level -->
-          <div class="control-section">
-            <div class="label">${localize('state.mist_level')}</div>
-            ${this._renderMistIcons(mistCurrent, mistMin, mistMax)}
-            ${
-              isOverrideActive
-                ? html`
-                  <div class="slider-container">
-                    <span class="slider-value">${mistCurrent}</span>
-                    <input
-                      type="range"
-                      .min=${mistMin}
-                      .max=${mistMax}
-                      .step=${mistState.attributes?.step ?? 1}
-                      .value=${mistCurrent}
-                      @change=${(e: Event) => this._setMistLevel((e.target as HTMLInputElement).value)}
-                    />
-                  </div>
+          <div class="control-row mist-row">
+            <span class="control-label">${localize('state.mist_level')}</span>
+            ${isTimerActive
+              ? html`
+                  <humidifier-button-control
+                    .hass=${this.hass}
+                    .entity=${this.config.mist_level}
+                    .value=${mistCurrent}
+                    .min=${mistMin}
+                    .max=${mistMax}
+                    .step=${mistState.attributes?.step ?? 1}
+                    .unit=${''}
+                  ></humidifier-button-control>
                 `
-                : html` <div class="readonly-value">${localize('state.override_off')}</div> `
-            }
+              : html`<div class="mist-display">${this._renderMistIcons(mistCurrent, mistMin, mistMax)}</div>`}
           </div>
         </div>
       </ha-card>
@@ -177,55 +179,73 @@ export class HumidifierControlCard extends LitElement {
     const icons: TemplateResult[] = [];
 
     for (let i = 0; i < 5; i++) {
-      icons.push(html` <ha-icon icon=${i < fillCount ? 'mdi:water' : 'mdi:water-outline'}></ha-icon> `);
+      icons.push(
+        html` <ha-icon
+          class="mist-icon ${i < fillCount ? 'active' : ''}"
+          icon=${i < fillCount ? 'mdi:water' : 'mdi:water-outline'}
+        ></ha-icon> `
+      );
     }
 
-    return html` <div class="mist-icons">${icons}</div> `;
-  }
-
-  private _setTargetHumidity(value: string): void {
-    this.hass.callService('input_number', 'set_value', {
-      entity_id: this.config.target_humidity,
-      value: parseFloat(value),
-    });
-  }
-
-  private _setMistLevel(value: string): void {
-    this.hass.callService('number', 'set_value', {
-      entity_id: this.config.mist_level,
-      value: parseFloat(value),
-    });
-  }
-
-  private _setOverrideTimer(option: string): void {
-    this.hass.callService('input_select', 'select_option', {
-      entity_id: this.config.override_timer,
-      option: option,
-    });
+    return html`${icons}`;
   }
 
   static get styles(): CSSResultGroup {
     return css`
       :host {
-        display: block;
+        --control-height: 42px;
+        --control-border-radius: 12px;
+        --rgb-state-humidifier: 33, 150, 243;
+      }
+
+      ha-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
       }
 
       .card-content {
-        padding: 16px;
-        display: grid;
-        gap: 16px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
       }
 
-      .humidity-section {
-        text-align: center;
-        padding: 16px 0;
+      /* Header */
+      .header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+      }
+
+      .title-row ha-icon {
+        --mdc-icon-size: 24px;
+        color: rgb(var(--rgb-state-humidifier));
+      }
+
+      .title {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--primary-text-color);
+      }
+
+      .humidity-display {
+        display: flex;
+        align-items: center;
       }
 
       .humidity-value {
-        font-size: 2.5rem;
-        font-weight: bold;
+        font-size: 24px;
+        font-weight: 500;
         color: var(--primary-text-color);
-        margin: 8px 0;
       }
 
       .humidity-value.unavailable {
@@ -233,82 +253,69 @@ export class HumidifierControlCard extends LitElement {
         opacity: 0.5;
       }
 
-      .unavailable-text {
-        color: var(--secondary-text-color);
-        font-size: 0.9rem;
-      }
-
-      .water-warning {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 12px;
-        background: var(--warning-color);
-        color: white;
-        border-radius: 8px;
-        font-weight: bold;
-      }
-
-      .water-warning ha-icon {
+      /* Water alert icon */
+      .water-alert-icon {
         --mdc-icon-size: 24px;
+        color: var(--warning-color, #ff9800);
+        animation: pulse 2s ease-in-out infinite;
       }
 
-      .control-section {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
       }
 
-      .label {
-        font-weight: 500;
-        color: var(--secondary-text-color);
-        font-size: 0.9rem;
-      }
-
-      .slider-container {
+      /* Control rows */
+      .control-row {
         display: flex;
         align-items: center;
         gap: 12px;
       }
 
-      .slider-value {
-        min-width: 50px;
-        font-weight: bold;
-        color: var(--primary-text-color);
+      .control-label {
+        min-width: 80px;
+        font-weight: 500;
+        color: var(--secondary-text-color);
+        font-size: 14px;
       }
 
-      input[type='range'] {
+      humidifier-button-control,
+      humidifier-timer-select-control {
         flex: 1;
-        cursor: pointer;
       }
 
-      select {
-        padding: 8px;
-        border-radius: 4px;
-        border: 1px solid var(--divider-color);
-        background: var(--card-background-color);
-        color: var(--primary-text-color);
-        font-size: 1rem;
+      /* Mist display */
+      .mist-row {
+        padding: 4px 0;
       }
 
-      .mist-icons {
+      .mist-display {
         display: flex;
-        justify-content: center;
         gap: 4px;
-        padding: 8px 0;
+        flex: 1;
+        justify-content: flex-end;
       }
 
-      .mist-icons ha-icon {
-        --mdc-icon-size: 28px;
-        color: var(--primary-color);
-      }
-
-      .readonly-value {
-        text-align: center;
+      .automatic-mode {
+        flex: 1;
+        text-align: right;
         color: var(--secondary-text-color);
         font-style: italic;
-        padding: 8px;
+        font-size: 14px;
+      }
+
+      .mist-icon {
+        --mdc-icon-size: 20px;
+        color: rgba(var(--rgb-state-humidifier), 0.3);
+        transition: color 0.2s;
+      }
+
+      .mist-icon.active {
+        color: rgb(var(--rgb-state-humidifier));
       }
     `;
   }

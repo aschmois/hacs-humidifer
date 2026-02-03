@@ -54,7 +54,8 @@ humidity_sensor: sensor.master_thermometer_humidity
 target_humidity: input_number.upstairs_humidity
 mist_level: number.upstairs_humidifier_mist_level
 water_sensor: binary_sensor.upstairs_humidifier_low_water
-override_timer: input_select.manual_upstairs_humidity_timer
+override_timer: timer.upstairs_humidifier_override
+override_timer_options: input_select.upstairs_humidifier_timer_options
 ```
 
 ### Full Configuration
@@ -66,34 +67,33 @@ humidity_sensor: sensor.master_thermometer_humidity
 target_humidity: input_number.upstairs_humidity
 mist_level: number.upstairs_humidifier_mist_level
 water_sensor: binary_sensor.upstairs_humidifier_low_water
-override_timer: input_select.manual_upstairs_humidity_timer
-mist_min: 1
-mist_max: 9
+override_timer: timer.upstairs_humidifier_override
+override_timer_options: input_select.upstairs_humidifier_timer_options
 ```
 
 ### Configuration Options
 
-| Name              | Type   | Required | Default      | Description                                                     |
-| ----------------- | ------ | -------- | ------------ | --------------------------------------------------------------- |
-| `type`            | string | Yes      | -            | Must be `custom:humidifier-control-card`                        |
-| `humidity_sensor` | string | Yes      | -            | Entity ID of the humidity sensor                                |
-| `target_humidity` | string | Yes      | -            | Entity ID of the target humidity input_number                   |
-| `mist_level`      | string | Yes      | -            | Entity ID of the mist level number entity                       |
-| `water_sensor`    | string | Yes      | -            | Entity ID of the low water binary_sensor                        |
-| `override_timer`  | string | Yes      | -            | Entity ID of the override timer input_select                    |
-| `name`            | string | No       | `Humidifier` | Name displayed in the card header                               |
-| `mist_min`        | number | No       | 1            | Minimum mist level (fallback if entity attribute not available) |
-| `mist_max`        | number | No       | 100          | Maximum mist level (fallback if entity attribute not available) |
+| Name                      | Type   | Required | Default      | Description                                          |
+| ------------------------- | ------ | -------- | ------------ | ---------------------------------------------------- |
+| `type`                    | string | Yes      | -            | Must be `custom:humidifier-control-card`             |
+| `humidity_sensor`         | string | Yes      | -            | Entity ID of the humidity sensor                     |
+| `target_humidity`         | string | Yes      | -            | Entity ID of the target humidity input_number        |
+| `mist_level`              | string | Yes      | -            | Entity ID of the mist level number entity            |
+| `water_sensor`            | string | Yes      | -            | Entity ID of the low water binary_sensor             |
+| `override_timer`          | string | Yes      | -            | Entity ID of the override timer (timer domain)       |
+| `override_timer_options`  | string | Yes      | -            | Entity ID of the timer options (input_select domain) |
+| `name`                    | string | No       | `Humidifier` | Name displayed in the card header                    |
 
 ### Required Entities
 
 You need to set up the following entities in your Home Assistant configuration:
 
 1. **Humidity Sensor** (`sensor.*`): Current humidity reading
-2. **Target Humidity** (`input_number.*`): Desired humidity level
+2. **Target Humidity** (`input_number.*`): Desired humidity level with +/- buttons
 3. **Mist Level** (`number.*`): Humidifier mist intensity control
 4. **Water Sensor** (`binary_sensor.*`): Low water indicator
-5. **Override Timer** (`input_select.*`): Timer for manual override with options like:
+5. **Override Timer** (`timer.*`): Actual timer entity that tracks override state
+6. **Override Timer Options** (`input_select.*`): Timer duration selector with options like:
    - `Off`
    - `1 minute`
    - `5 minutes`
@@ -106,22 +106,22 @@ You need to set up the following entities in your Home Assistant configuration:
 
 ### Automatic Mode
 
-When the override timer is set to "Off", the card displays:
+When the override timer is in `idle` state (set to "Off"), the card displays:
 
 - Current humidity (read-only)
-- Target humidity (adjustable)
-- Mist level visualization (read-only, shows "Automatic")
+- Target humidity (adjustable with +/- buttons)
+- Mist level visualization (read-only icons showing current intensity)
 - Override timer dropdown (to enable manual control)
 
 In this mode, your Home Assistant automations control the mist level based on the current and target humidity.
 
-### Override Mode
+### Manual Override Mode
 
-When the override timer is set to any value other than "Off":
+When the override timer is active (any value other than "Off"):
 
 - Current humidity (read-only)
-- Target humidity (adjustable)
-- Mist level visualization with slider (adjustable)
+- Target humidity (adjustable with +/- buttons)
+- Mist level control (+/- buttons to manually adjust)
 - Override timer dropdown (shows current override duration)
 
 The card allows manual control of the mist level until the timer expires or is set back to "Off".

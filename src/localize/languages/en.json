@@ -10,17 +10,16 @@
     "target_humidity": "Target Humidity (Required)",
     "mist_level": "Mist Level Control (Required)",
     "water_sensor": "Water Sensor (Required)",
-    "override_timer": "Override Timer (Required)",
-    "name": "Name (Optional)",
-    "mist_min": "Min Mist Level (Optional, default 1)",
-    "mist_max": "Max Mist Level (Optional, default 100)"
+    "override_timer": "Override Timer Entity (Required)",
+    "override_timer_options": "Override Timer Options (Required)",
+    "name": "Name (Optional)"
   },
   "state": {
     "low_water": "Low Water!",
     "current_humidity": "Current Humidity",
     "target": "Target",
     "mist_level": "Mist Level",
-    "override_off": "Automatic",
-    "override_on": "Override Active"
+    "override": "Override",
+    "automatic": "Automatic"
   }
 }

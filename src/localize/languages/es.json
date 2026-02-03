@@ -10,17 +10,16 @@
     "target_humidity": "Humedad Objetivo (Requerida)",
     "mist_level": "Control de Nivel de Niebla (Requerido)",
     "water_sensor": "Sensor de Agua (Requerido)",
-    "override_timer": "Temporizador de Anulación (Requerido)",
-    "name": "Nombre (Opcional)",
-    "mist_min": "Nivel Mínimo de Niebla (Opcional, predeterminado 1)",
-    "mist_max": "Nivel Máximo de Niebla (Opcional, predeterminado 100)"
+    "override_timer": "Entidad del Temporizador (Requerido)",
+    "override_timer_options": "Opciones del Temporizador (Requerido)",
+    "name": "Nombre (Opcional)"
   },
   "state": {
     "low_water": "¡Agua Baja!",
     "current_humidity": "Humedad Actual",
     "target": "Objetivo",
     "mist_level": "Nivel de Niebla",
-    "override_off": "Automático",
-    "override_on": "Anulación Activa"
+    "override": "Anulación",
+    "automatic": "Automático"
   }
 }

@@ -15,6 +15,5 @@ export interface HumidifierControlCardConfig extends LovelaceCardConfig {
   mist_level: string;
   water_sensor: string;
   override_timer: string;
-  mist_min?: number;
-  mist_max?: number;
+  override_timer_options: string;
 }
