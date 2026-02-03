@@ -1,30 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LitElement, html, TemplateResult, css, PropertyValues, CSSResultGroup } from 'lit';
-import { customElement, property, state } from 'lit/decorators';
-import {
-  HomeAssistant,
-  hasConfigOrEntityChanged,
-  LovelaceCardEditor,
-} from 'custom-card-helpers';
+import { customElement, property, state } from 'lit/decorators.js';
+import { HomeAssistant, hasConfigOrEntityChanged, LovelaceCardEditor } from 'custom-card-helpers';
 
 import type { HumidifierControlCardConfig } from './types';
-import { CARD_VERSION } from './const';
 import { localize } from './localize/localize';
-
-/* eslint no-console: 0 */
-console.info(
-  `%c  HUMIDIFIER-CONTROL-CARD \n%c  ${localize('common.version')} ${CARD_VERSION}    `,
-  'color: orange; font-weight: bold; background: black',
-  'color: white; font-weight: bold; background: dimgray',
-);
-
-// This puts your card into the UI card picker dialog
-(window as any).customCards = (window as any).customCards || [];
-(window as any).customCards.push({
-  type: 'custom:humidifier-control-card',
-  name: 'Humidifier Control Card',
-  description: 'Control humidifier with override timer and automatic mist adjustment',
-});
 
 @customElement('humidifier-control-card')
 export class HumidifierControlCard extends LitElement {
@@ -37,11 +16,11 @@ export class HumidifierControlCard extends LitElement {
     const entities = Object.keys(hass.states);
     return {
       type: 'custom:humidifier-control-card',
-      humidity_sensor: entities.find(e => e.startsWith('sensor.') && e.includes('humidity')),
-      target_humidity: entities.find(e => e.startsWith('input_number.')),
-      mist_level: entities.find(e => e.startsWith('number.')),
-      water_sensor: entities.find(e => e.startsWith('binary_sensor.') && e.includes('water')),
-      override_timer: entities.find(e => e.startsWith('input_select.')),
+      humidity_sensor: entities.find((e) => e.startsWith('sensor.') && e.includes('humidity')),
+      target_humidity: entities.find((e) => e.startsWith('input_number.')),
+      mist_level: entities.find((e) => e.startsWith('number.')),
+      water_sensor: entities.find((e) => e.startsWith('binary_sensor.') && e.includes('water')),
+      override_timer: entities.find((e) => e.startsWith('input_select.')),
     };
   }
 
@@ -124,14 +103,16 @@ export class HumidifierControlCard extends LitElement {
           </div>
 
           <!-- Low Water Warning -->
-          ${isWaterLow
-            ? html`
+          ${
+            isWaterLow
+              ? html`
                 <div class="water-warning">
                   <ha-icon icon="mdi:water-alert"></ha-icon>
                   <span>${localize('state.low_water')}</span>
                 </div>
               `
-            : ''}
+              : ''
+          }
 
           <!-- Target Humidity -->
           <div class="control-section">
@@ -168,8 +149,9 @@ export class HumidifierControlCard extends LitElement {
           <div class="control-section">
             <div class="label">${localize('state.mist_level')}</div>
             ${this._renderMistIcons(mistCurrent, mistMin, mistMax)}
-            ${isOverrideActive
-              ? html`
+            ${
+              isOverrideActive
+                ? html`
                   <div class="slider-container">
                     <span class="slider-value">${mistCurrent}</span>
                     <input
@@ -182,7 +164,8 @@ export class HumidifierControlCard extends LitElement {
                     />
                   </div>
                 `
-              : html` <div class="readonly-value">${localize('state.override_off')}</div> `}
+                : html` <div class="readonly-value">${localize('state.override_off')}</div> `
+            }
           </div>
         </div>
       </ha-card>
@@ -191,7 +174,7 @@ export class HumidifierControlCard extends LitElement {
 
   private _renderMistIcons(current: number, min: number, max: number): TemplateResult {
     const fillCount = Math.round(((current - min) / (max - min)) * 5);
-    const icons = [];
+    const icons: TemplateResult[] = [];
 
     for (let i = 0; i < 5; i++) {
       icons.push(html` <ha-icon icon=${i < fillCount ? 'mdi:water' : 'mdi:water-outline'}></ha-icon> `);

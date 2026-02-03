@@ -30,13 +30,13 @@ A custom Home Assistant Lovelace card for controlling humidifiers with override 
 
 ### Manual Installation
 
-1. Download `humidifier-control-card.js` from the [latest release](https://github.com/aschmois/humidifier-control-card/releases)
-2. Copy it to `<config>/www/community/humidifier-control-card/humidifier-control-card.js`
+1. Download `hacs-humidifier.js` from the [latest release](https://github.com/aschmois/hacs-humdifier/releases)
+2. Copy it to `<config>/www/hacs-humidifier.js`
 3. Add the resource to your Lovelace configuration:
 
 ```yaml
 resources:
-  - url: /local/community/humidifier-control-card/humidifier-control-card.js
+  - url: /local/hacs-humidifier.js
     type: module
 ```
 
@@ -73,17 +73,17 @@ mist_max: 9
 
 ### Configuration Options
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `type` | string | Yes | - | Must be `custom:humidifier-control-card` |
-| `humidity_sensor` | string | Yes | - | Entity ID of the humidity sensor |
-| `target_humidity` | string | Yes | - | Entity ID of the target humidity input_number |
-| `mist_level` | string | Yes | - | Entity ID of the mist level number entity |
-| `water_sensor` | string | Yes | - | Entity ID of the low water binary_sensor |
-| `override_timer` | string | Yes | - | Entity ID of the override timer input_select |
-| `name` | string | No | `Humidifier` | Name displayed in the card header |
-| `mist_min` | number | No | 1 | Minimum mist level (fallback if entity attribute not available) |
-| `mist_max` | number | No | 100 | Maximum mist level (fallback if entity attribute not available) |
+| Name              | Type   | Required | Default      | Description                                                     |
+| ----------------- | ------ | -------- | ------------ | --------------------------------------------------------------- |
+| `type`            | string | Yes      | -            | Must be `custom:humidifier-control-card`                        |
+| `humidity_sensor` | string | Yes      | -            | Entity ID of the humidity sensor                                |
+| `target_humidity` | string | Yes      | -            | Entity ID of the target humidity input_number                   |
+| `mist_level`      | string | Yes      | -            | Entity ID of the mist level number entity                       |
+| `water_sensor`    | string | Yes      | -            | Entity ID of the low water binary_sensor                        |
+| `override_timer`  | string | Yes      | -            | Entity ID of the override timer input_select                    |
+| `name`            | string | No       | `Humidifier` | Name displayed in the card header                               |
+| `mist_min`        | number | No       | 1            | Minimum mist level (fallback if entity attribute not available) |
+| `mist_max`        | number | No       | 100          | Maximum mist level (fallback if entity attribute not available) |
 
 ### Required Entities
 
@@ -107,6 +107,7 @@ You need to set up the following entities in your Home Assistant configuration:
 ### Automatic Mode
 
 When the override timer is set to "Off", the card displays:
+
 - Current humidity (read-only)
 - Target humidity (adjustable)
 - Mist level visualization (read-only, shows "Automatic")
@@ -117,6 +118,7 @@ In this mode, your Home Assistant automations control the mist level based on th
 ### Override Mode
 
 When the override timer is set to any value other than "Off":
+
 - Current humidity (read-only)
 - Target humidity (adjustable)
 - Mist level visualization with slider (adjustable)
@@ -143,13 +145,13 @@ npm install
 npm start
 ```
 
-This will start a development server on `http://localhost:5000/humidifier-control-card.js`
+This will start a development server on `http://localhost:5000/hacs-humidifier.js`
 
 Add this to your Home Assistant Lovelace resources for testing:
 
 ```yaml
 resources:
-  - url: http://YOUR_DEV_MACHINE_IP:5000/humidifier-control-card.js
+  - url: http://YOUR_DEV_MACHINE_IP:5000/hacs-humidifier.js
     type: module
 ```
 
@@ -159,7 +161,7 @@ resources:
 npm run build
 ```
 
-The compiled file will be in `dist/humidifier-control-card.js`
+The compiled file will be in `dist/hacs-humidifier.js`
 
 ## Screenshots
 
@@ -168,7 +170,8 @@ _Coming soon_
 ## Support
 
 If you have questions or issues, please:
-1. Check the [existing issues](https://github.com/aschmois/humidifier-control-card/issues)
+
+1. Check the [existing issues](https://github.com/aschmois/hacs-humdifier/issues)
 2. Create a new issue with:
    - Your Home Assistant version
    - Card version
@@ -178,7 +181,3 @@ If you have questions or issues, please:
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details
-
-## Credits
-
-Built using the [custom-cards/boilerplate-card](https://github.com/custom-cards/boilerplate-card) template.

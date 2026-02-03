@@ -1,17 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LitElement, html, TemplateResult, css, CSSResultGroup } from 'lit';
 import { HomeAssistant, fireEvent, LovelaceCardEditor } from 'custom-card-helpers';
 
-import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 import { HumidifierControlCardConfig } from './types';
-import { customElement, property, state } from 'lit/decorators';
-import { formfieldDefinition } from '../elements/formfield';
-import { selectDefinition } from '../elements/select';
-import { textfieldDefinition } from '../elements/textfield';
+import { customElement, property, state } from 'lit/decorators.js';
 import { localize } from './localize/localize';
 
 @customElement('humidifier-control-card-editor')
-export class HumidifierControlCardEditor extends ScopedRegistryHost(LitElement) implements LovelaceCardEditor {
+export class HumidifierControlCardEditor extends LitElement implements LovelaceCardEditor {
   @property({ attribute: false }) public hass?: HomeAssistant;
 
   @state() private _config?: HumidifierControlCardConfig;
@@ -19,12 +14,6 @@ export class HumidifierControlCardEditor extends ScopedRegistryHost(LitElement) 
   @state() private _helpers?: any;
 
   private _initialized = false;
-
-  static elementDefinitions = {
-    ...textfieldDefinition,
-    ...selectDefinition,
-    ...formfieldDefinition,
-  };
 
   public setConfig(config: HumidifierControlCardConfig): void {
     this._config = config;
@@ -77,106 +66,79 @@ export class HumidifierControlCardEditor extends ScopedRegistryHost(LitElement) 
       return html``;
     }
 
-    const entities = Object.keys(this.hass.states);
-    const sensors = entities.filter(e => e.startsWith('sensor.'));
-    const inputNumbers = entities.filter(e => e.startsWith('input_number.'));
-    const numbers = entities.filter(e => e.startsWith('number.'));
-    const binarySensors = entities.filter(e => e.startsWith('binary_sensor.'));
-    const inputSelects = entities.filter(e => e.startsWith('input_select.'));
-
     return html`
-      <mwc-select
-        naturalMenuWidth
-        fixedMenuPosition
+      <ha-entity-picker
         label=${localize('config.humidity_sensor')}
-        .configValue=${'humidity_sensor'}
+        .hass=${this.hass}
         .value=${this._humidity_sensor}
-        @selected=${this._valueChanged}
-        @closed=${(ev) => ev.stopPropagation()}
-      >
-        ${sensors.map((entity) => {
-          return html`<mwc-list-item .value=${entity}>${entity}</mwc-list-item>`;
-        })}
-      </mwc-select>
+        .configValue=${'humidity_sensor'}
+        .includeDomains=${['sensor']}
+        @value-changed=${this._valueChanged}
+        allow-custom-entity
+      ></ha-entity-picker>
 
-      <mwc-select
-        naturalMenuWidth
-        fixedMenuPosition
+      <ha-entity-picker
         label=${localize('config.target_humidity')}
-        .configValue=${'target_humidity'}
+        .hass=${this.hass}
         .value=${this._target_humidity}
-        @selected=${this._valueChanged}
-        @closed=${(ev) => ev.stopPropagation()}
-      >
-        ${inputNumbers.map((entity) => {
-          return html`<mwc-list-item .value=${entity}>${entity}</mwc-list-item>`;
-        })}
-      </mwc-select>
+        .configValue=${'target_humidity'}
+        .includeDomains=${['input_number']}
+        @value-changed=${this._valueChanged}
+        allow-custom-entity
+      ></ha-entity-picker>
 
-      <mwc-select
-        naturalMenuWidth
-        fixedMenuPosition
+      <ha-entity-picker
         label=${localize('config.mist_level')}
-        .configValue=${'mist_level'}
+        .hass=${this.hass}
         .value=${this._mist_level}
-        @selected=${this._valueChanged}
-        @closed=${(ev) => ev.stopPropagation()}
-      >
-        ${numbers.map((entity) => {
-          return html`<mwc-list-item .value=${entity}>${entity}</mwc-list-item>`;
-        })}
-      </mwc-select>
+        .configValue=${'mist_level'}
+        .includeDomains=${['number']}
+        @value-changed=${this._valueChanged}
+        allow-custom-entity
+      ></ha-entity-picker>
 
-      <mwc-select
-        naturalMenuWidth
-        fixedMenuPosition
+      <ha-entity-picker
         label=${localize('config.water_sensor')}
-        .configValue=${'water_sensor'}
+        .hass=${this.hass}
         .value=${this._water_sensor}
-        @selected=${this._valueChanged}
-        @closed=${(ev) => ev.stopPropagation()}
-      >
-        ${binarySensors.map((entity) => {
-          return html`<mwc-list-item .value=${entity}>${entity}</mwc-list-item>`;
-        })}
-      </mwc-select>
+        .configValue=${'water_sensor'}
+        .includeDomains=${['binary_sensor']}
+        @value-changed=${this._valueChanged}
+        allow-custom-entity
+      ></ha-entity-picker>
 
-      <mwc-select
-        naturalMenuWidth
-        fixedMenuPosition
+      <ha-entity-picker
         label=${localize('config.override_timer')}
-        .configValue=${'override_timer'}
+        .hass=${this.hass}
         .value=${this._override_timer}
-        @selected=${this._valueChanged}
-        @closed=${(ev) => ev.stopPropagation()}
-      >
-        ${inputSelects.map((entity) => {
-          return html`<mwc-list-item .value=${entity}>${entity}</mwc-list-item>`;
-        })}
-      </mwc-select>
+        .configValue=${'override_timer'}
+        .includeDomains=${['input_select']}
+        @value-changed=${this._valueChanged}
+        allow-custom-entity
+      ></ha-entity-picker>
 
-      <mwc-textfield
+      <ha-textfield
         label=${localize('config.name')}
         .value=${this._name}
         .configValue=${'name'}
         @input=${this._valueChanged}
-      ></mwc-textfield>
+      ></ha-textfield>
 
-      <mwc-textfield
+      <ha-textfield
         type="number"
         label=${localize('config.mist_min')}
         .value=${this._mist_min ?? ''}
         .configValue=${'mist_min'}
         @input=${this._valueChanged}
-      ></mwc-textfield>
+      ></ha-textfield>
 
-      <mwc-textfield
+      <ha-textfield
         type="number"
         label=${localize('config.mist_max')}
         .value=${this._mist_max ?? ''}
         .configValue=${'mist_max'}
         @input=${this._valueChanged}
-      ></mwc-textfield>
+      ></ha-textfield>
     `;
   }
 
@@ -196,37 +158,41 @@ export class HumidifierControlCardEditor extends ScopedRegistryHost(LitElement) 
       return;
     }
     const target = ev.target;
-    if (this[`_${target.configValue}`] === target.value) {
+    const configValue = target.configValue;
+
+    if (!configValue) {
       return;
     }
-    if (target.configValue) {
-      if (target.value === '') {
-        const tmpConfig = { ...this._config };
-        delete tmpConfig[target.configValue];
-        this._config = tmpConfig;
-      } else {
-        let value = target.value;
-        // Parse numeric values for mist_min and mist_max
-        if (target.configValue === 'mist_min' || target.configValue === 'mist_max') {
-          value = target.value ? Number(target.value) : undefined;
-        }
-        this._config = {
-          ...this._config,
-          [target.configValue]: value,
-        };
-      }
+
+    let value = ev.detail?.value !== undefined ? ev.detail.value : target.value;
+
+    if (this[`_${configValue}`] === value) {
+      return;
     }
+
+    if (value === '' || value === undefined) {
+      const tmpConfig = { ...this._config };
+      delete tmpConfig[configValue];
+      this._config = tmpConfig;
+    } else {
+      // Parse numeric values for mist_min and mist_max
+      if (configValue === 'mist_min' || configValue === 'mist_max') {
+        value = value ? Number(value) : undefined;
+      }
+      this._config = {
+        ...this._config,
+        [configValue]: value,
+      };
+    }
+
     fireEvent(this, 'config-changed', { config: this._config });
   }
 
   static styles: CSSResultGroup = css`
-    mwc-select,
-    mwc-textfield {
+    ha-entity-picker,
+    ha-textfield {
       margin-bottom: 16px;
       display: block;
-    }
-    mwc-formfield {
-      padding-bottom: 8px;
     }
   `;
 }

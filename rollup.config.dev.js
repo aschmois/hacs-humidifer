@@ -1,26 +1,39 @@
-import resolve from 'rollup-plugin-node-resolve';
-import typescript from 'rollup-plugin-typescript2';
-import babel from 'rollup-plugin-babel';
-import serve from 'rollup-plugin-serve';
-import { terser } from 'rollup-plugin-terser';
+import { getBabelInputPlugin, getBabelOutputPlugin } from '@rollup/plugin-babel';
+import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-import ignore from './rollup-plugins/ignore';
-import { ignoreTextfieldFiles } from './elements/ignore/textfield';
-import { ignoreSelectFiles } from './elements/ignore/select';
-import { ignoreSwitchFiles } from './elements/ignore/switch';
+import nodeResolve from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
+import typescript from '@rollup/plugin-typescript';
+import serve from 'rollup-plugin-serve';
 
 export default {
-  input: ['src/humidifier-control-card.ts'],
+  input: ['src/index.ts'],
   output: {
-    dir: './dist',
+    file: 'dist/hacs-humidifier.js',
     format: 'es',
+    name: 'hacs-humidifier',
+    inlineDynamicImports: true,
   },
   plugins: [
-    resolve(),
-    typescript(),
+    typescript({
+      declaration: false,
+    }),
+    nodeResolve(),
     json(),
-    babel({
-      exclude: 'node_modules/**',
+    commonjs(),
+    getBabelInputPlugin({
+      babelHelpers: 'bundled',
+    }),
+    getBabelOutputPlugin({
+      presets: [
+        [
+          '@babel/preset-env',
+          {
+            modules: false,
+          },
+        ],
+      ],
+      compact: true,
     }),
     terser(),
     serve({
@@ -31,9 +44,6 @@ export default {
       headers: {
         'Access-Control-Allow-Origin': '*',
       },
-    }),
-    ignore({
-      files: [...ignoreTextfieldFiles, ...ignoreSelectFiles, ...ignoreSwitchFiles].map((file) => require.resolve(file)),
     }),
   ],
 };

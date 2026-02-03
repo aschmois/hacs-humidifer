@@ -1,5 +1,5 @@
 {
-    "name": "Humidifier Control Card",
-    "render_readme": true,
-    "filename": "humidifier-control-card.js"
+  "name": "Humidifier Control Card",
+  "render_readme": true,
+  "filename": "hacs-humidifier.js"
 }
