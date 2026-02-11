@@ -283,7 +283,7 @@ export class HumidifierControlCard extends LitElement {
                     .unit=${''}
                   ></humidifier-button-control>
                 `
-                : html`<div class="mist-display">${this._renderMistIcons(mistCurrent, mistMin, mistMax)}</div>`
+                : this._renderMistBar(mistState.entity_id, mistCurrent, mistMin, mistMax)
             }
           </div>
         </div>
@@ -291,20 +291,19 @@ export class HumidifierControlCard extends LitElement {
     `;
   }
 
-  private _renderMistIcons(current: number, min: number, max: number): TemplateResult {
-    const fillCount = Math.round(((current - min) / (max - min)) * 5);
-    const icons: TemplateResult[] = [];
+  private _renderMistBar(entityId: string, current: number, min: number, max: number): TemplateResult {
+    const pct = max > min ? ((current - min) / (max - min)) * 100 : 0;
 
-    for (let i = 0; i < 5; i++) {
-      icons.push(
-        html` <ha-icon
-          class="mist-icon ${i < fillCount ? 'active' : ''}"
-          icon=${i < fillCount ? 'mdi:water' : 'mdi:water-outline'}
-        ></ha-icon> `,
-      );
-    }
-
-    return html`${icons}`;
+    return html`
+      <div class="mist-bar-container" @click=${() => this._openMoreInfo(entityId)}>
+        <span class="mist-bar-label">${min}</span>
+        <div class="mist-bar">
+          <div class="mist-bar-fill" style="width: ${pct}%"></div>
+          <span class="mist-bar-value">${current}</span>
+        </div>
+        <span class="mist-bar-label">${max}</span>
+      </div>
+    `;
   }
 
   static get styles(): CSSResultGroup {
@@ -342,6 +341,7 @@ export class HumidifierControlCard extends LitElement {
         gap: 8px;
         flex: 1;
         cursor: pointer;
+        touch-action: manipulation;
       }
 
       .title-row ha-icon {
@@ -359,6 +359,7 @@ export class HumidifierControlCard extends LitElement {
         display: flex;
         align-items: center;
         cursor: pointer;
+        touch-action: manipulation;
       }
 
       .humidity-value {
@@ -408,34 +409,54 @@ export class HumidifierControlCard extends LitElement {
         flex: 1;
       }
 
-      /* Mist display */
+      /* Mist bar */
       .mist-row {
         padding: 4px 0;
       }
 
-      .mist-display {
+      .mist-bar-container {
         display: flex;
-        gap: 4px;
+        align-items: center;
+        gap: 8px;
         flex: 1;
-        justify-content: flex-end;
+        cursor: pointer;
+        touch-action: manipulation;
       }
 
-      .automatic-mode {
-        flex: 1;
-        text-align: right;
+      .mist-bar-label {
+        font-size: 12px;
+        font-weight: 500;
         color: var(--secondary-text-color);
-        font-style: italic;
-        font-size: 14px;
+        min-width: 16px;
+        text-align: center;
       }
 
-      .mist-icon {
-        --mdc-icon-size: 20px;
-        color: rgba(var(--rgb-state-humidifier), 0.3);
-        transition: color 0.2s;
+      .mist-bar {
+        flex: 1;
+        height: 28px;
+        border-radius: var(--control-border-radius);
+        background: rgba(var(--rgb-primary-text-color), 0.05);
+        position: relative;
+        overflow: hidden;
       }
 
-      .mist-icon.active {
-        color: rgb(var(--rgb-state-humidifier));
+      .mist-bar-fill {
+        height: 100%;
+        border-radius: var(--control-border-radius);
+        background: rgb(var(--rgb-state-humidifier));
+        opacity: 0.7;
+        transition: width 0.3s ease;
+      }
+
+      .mist-bar-value {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--primary-text-color);
       }
     `;
   }

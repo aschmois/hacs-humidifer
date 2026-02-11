@@ -1,6 +1,6 @@
 import { css, CSSResultGroup, html, LitElement, TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { HomeAssistant, fireEvent } from 'custom-card-helpers';
+import { HomeAssistant } from 'custom-card-helpers';
 
 @customElement('humidifier-timer-select-control')
 export class TimerSelectControl extends LitElement {
@@ -9,37 +9,13 @@ export class TimerSelectControl extends LitElement {
   @property() public value!: string;
   @property({ type: Array }) public options: string[] = [];
 
-  private _holdTimer?: number;
-  private _holding = false;
-
   private onChange(e: Event): void {
     const value = (e.target as HTMLSelectElement).value;
-    this.hass.callService('input_select', 'select_option', {
+    const domain = this.entity.split('.')[0];
+    this.hass.callService(domain, 'select_option', {
       entity_id: this.entity,
       option: value,
     });
-  }
-
-  private _handleHoldStart(e: Event): void {
-    this._holding = false;
-    this._holdTimer = window.setTimeout(() => {
-      this._holding = true;
-      e.preventDefault();
-      e.stopPropagation();
-      this._openMoreInfo();
-    }, 500);
-  }
-
-  private _handleHoldEnd(): void {
-    if (this._holdTimer) {
-      clearTimeout(this._holdTimer);
-      this._holdTimer = undefined;
-    }
-    this._holding = false;
-  }
-
-  private _openMoreInfo(): void {
-    fireEvent(this, 'hass-more-info', { entityId: this.entity });
   }
 
   protected render(): TemplateResult {
@@ -48,11 +24,6 @@ export class TimerSelectControl extends LitElement {
         class="select-control"
         .value=${this.value}
         @change=${this.onChange}
-        @touchstart=${this._handleHoldStart}
-        @touchend=${this._handleHoldEnd}
-        @mousedown=${this._handleHoldStart}
-        @mouseup=${this._handleHoldEnd}
-        @mouseleave=${this._handleHoldEnd}
       >
         ${this.options.map(
           (option) => html` <option value=${option} ?selected=${option === this.value}>${option}</option> `
@@ -78,6 +49,7 @@ export class TimerSelectControl extends LitElement {
         font-weight: 500;
         cursor: pointer;
         outline: none;
+        touch-action: manipulation;
         font-family: inherit;
         -webkit-appearance: none;
         -moz-appearance: none;

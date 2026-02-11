@@ -126,7 +126,7 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
         .hass=${this.hass}
         .value=${this._target_humidity}
         .configValue=${'target_humidity'}
-        .includeDomains=${['input_number']}
+        .includeDomains=${['input_number', 'number']}
         @value-changed=${this._valueChanged}
         allow-custom-entity
       ></ha-entity-picker>
@@ -137,7 +137,7 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
         .hass=${this.hass}
         .value=${this._fan_speed}
         .configValue=${'fan_speed'}
-        .includeDomains=${['number', 'fan']}
+        .includeDomains=${['number', 'input_number', 'fan']}
         @value-changed=${this._valueChanged}
         allow-custom-entity
       ></ha-entity-picker>
@@ -171,7 +171,7 @@ export class HumidifierControlCardEditor extends LitElement implements LovelaceC
         .hass=${this.hass}
         .value=${this._override_timer_options}
         .configValue=${'override_timer_options'}
-        .includeDomains=${['input_select']}
+        .includeDomains=${['input_select', 'select']}
         @value-changed=${this._valueChanged}
         allow-custom-entity
       ></ha-entity-picker>

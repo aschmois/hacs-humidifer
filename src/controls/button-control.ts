@@ -12,22 +12,38 @@ export class ButtonControl extends LitElement {
   @property({ type: Number }) public step: number = 1;
   @property({ type: String }) public unit: string = '';
 
+  private _callService(action: 'increment' | 'decrement'): void {
+    const domain = this.entity.split('.')[0];
+
+    if (domain === 'input_number') {
+      this.hass.callService(domain, action, {
+        entity_id: this.entity,
+      });
+    } else if (domain === 'fan') {
+      const newValue = action === 'increment' ? this.value + this.step : this.value - this.step;
+      this.hass.callService('fan', 'set_percentage', {
+        entity_id: this.entity,
+        percentage: Math.min(this.max, Math.max(this.min, newValue)),
+      });
+    } else {
+      const newValue = action === 'increment' ? this.value + this.step : this.value - this.step;
+      this.hass.callService(domain, 'set_value', {
+        entity_id: this.entity,
+        value: Math.min(this.max, Math.max(this.min, newValue)),
+      });
+    }
+  }
+
   private onIncrement(e: MouseEvent): void {
     e.preventDefault();
     e.stopPropagation();
-    const domain = this.entity.split('.')[0];
-    this.hass.callService(domain, 'increment', {
-      entity_id: this.entity,
-    });
+    this._callService('increment');
   }
 
   private onDecrement(e: MouseEvent): void {
     e.preventDefault();
     e.stopPropagation();
-    const domain = this.entity.split('.')[0];
-    this.hass.callService(domain, 'decrement', {
-      entity_id: this.entity,
-    });
+    this._callService('decrement');
   }
 
   private _handleValueClick(e: MouseEvent): void {
@@ -79,6 +95,7 @@ export class ButtonControl extends LitElement {
         background: var(--bg-color);
         border-radius: var(--control-border-radius, 12px);
         overflow: hidden;
+        touch-action: manipulation;
       }
       .button {
         display: flex;
