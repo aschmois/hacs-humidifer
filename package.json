@@ -1,6 +1,6 @@
 {
   "name": "hacs-humidifer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Control humidifier with override timer and automatic mist adjustment",
   "type": "module",
   "keywords": [
